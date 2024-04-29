@@ -65,7 +65,9 @@ Revision 5.25 15/01/14
          2.-Se saca que tenga que estar en automatico para el arranque del grupo desde la TA
 Revision 6.00
          1.-Arranque remoto por entrada externa
-         2.-Se saco la igualacion de rDato1=chksum que antes eliminaba el control de error en la com
+Revision 6.10
+         1.-Cambio de tiempos a minutos         
+         
          */
 
 
@@ -116,6 +118,7 @@ int const   kTimeOut=5;    //time out de espera de respuesta de micros F12
 int const   k1Seg=75;      //conteo para lograr 1 segundo con cristal de 10mhz
 int const   kTmr250=19;    //Constante para tener 250 ms.
 int const   kTmrInact=240;  //tiempo en segundo de inactividad del teclado cuando esta configurando
+int const   kTmr1min=60;   //constante para lograr un minuto
 
 //constantes de posicion en la eeprom de los valores de configuracion
 int const   kVmin=0;       //tension de falla por bajo
@@ -183,6 +186,8 @@ int1  pul_1seg=0;
 int1  p_1seg=0;
 int1  p_250ms=0;
 int1  p_1seg0H=0;
+INT1  p_1min=0;
+int1  pul_1min=0;
 
 //flag de teclado
 int1  fTeclaOK=0;
@@ -269,6 +274,7 @@ int8  tmr1seg=k1Seg; // contador para lograr 1 segundo
 int8  tmr1min=60;
 int8  tmr1min1=60;
 int8  tmr250ms=ktmr250; //timer 250ms
+int8  rTmr1min=kTmr1min;   //timer global de 1 minuto
 
 
 //Registros de configuracion
@@ -338,6 +344,8 @@ int1 fFaNoParGr=0;   //falla grupo no paro
 int1 fCO_LI=0;
 int1 fCO_GR=0;
 
+int1 fLiOKIni=0;
+
 int8 rCO_LI=10;
 int8 rCO_GR=10;
 int8 rDyArrRem=10;
@@ -346,8 +354,7 @@ int8 rTPreCeb=0;  //tiempo preseteado de cebador
 int8 rTCeb=0;     //tiempo de cebador
 int8 rCeb=0;      //usar cebador
 #bit fCeb = rCeb.0
-int1 chkOk=0;
-int8 contador=0;
+
 // Declaración de Funciones ///////////////////////////////////////////////////
 
 void menu0(void);           
@@ -437,46 +444,48 @@ int8  i=0;
 int8  j=0;
 int8  Dato1=0;
 int16 vEscalado=0;
-contador++;
+
 chksum=0;
-//todos los delay 200 originalmente
 for(j=0;j<4;j++){//3 datos + chksum
+  
    //Recibe bit a bit
-   delay_us(300);
    for (i=0;i<8;i++){
          if (micro==1)output_low(pClkLi);     //led opto encendido pin en alto del 12f 
          else output_low(pClkGr);             //led opto encendido pin en alto del 12f
-         delay_us(300);
+         delay_us(150);
+         
          //leo dato por bit de falla
          if (Micro==1){ //micro de linea
                output_high(pClkLi);            //led opto apagado pin en bajo del 12f
-               delay_us(300);
+               delay_us(170);
                shift_right(&Dato1,1,input(pFallaLi));
+
                }
          if (Micro==0){ //micro de grupo
                output_high(pClkGr);   //led opto apagado pin en bajo del 12f
-               delay_us(300);
+               delay_us(170);
                shift_right(&Dato1,1,input(pFallaGr));
                }
-   }
+         }
       *((&rDataRx1) + j)=Dato1;
       if (j!=3){
-         chksum=chksum+Dato1; 
+         chksum=chksum+Dato1;
+         
          if (Micro==0)   
             vEscalado=(int16)Dato1*rGanGr;//128;
          else
             vEscalado=(int16)Dato1*rGanLi;//128;
             
-         Dato1 =(int8)(vEscalado/100);
+         Dato1 = (int8)(vEscalado/100);
          *((&rDataRx1) + j)=Dato1;
       }
       else{
-         //ChkRx=Dato1;
-         if (Dato1==chksum) fRxOk=1;
-         else fRxOk=0;
+         ChkRx=Dato1;
+         if (Dato1==chksum)fRxOk=1;
+      }
    }
 }
-}
+
 void Verifica_VLi(void){
       if (VRLi > VRmax)
          bit_set(rFaLi,0);
@@ -746,22 +755,27 @@ void RTCC_isr() {                      // Interrupción Timer 0
 if (--tmr1seg==0){
    pul_1seg=1;
    tmr1seg=k1Seg;// 10mhz - 76; 
+   //controlar 1 minuto
+   if (--rTmr1min==0){
+      rTmr1min=kTmr1min;
+      pul_1min=1;
+   }
          //Deteccion de falla de grupo
          IF(!fTempFallaGr){                  //Si esta en falla el grupo
-            if ((--tmrGrFa==0)){      //Decremento temporizador
-               fGrupoOk=0;                      //Fin temporizador  Setea falla grupo
-               tmrGrFa=preFVGr;                 //cargo valor en el temporizador
-            }
+               if ((--tmrGrFa==0)){      //Decremento temporizador
+                  fGrupoOk=0;                      //Fin temporizador  Setea falla grupo
+                  tmrGrFa=preFVGr;                 //cargo valor en el temporizador
+               }
          }
          else{
                tmrGrFa=preFVGr;
          }
          
          IF(fTempFallaGr){      //Grupo ok
-            if ((--tmrGrOk==0)){
-               fGrupoOk=1;
-               tmrGrOk=preGrOk;
-            }
+               if (--tmrGrOk==0 ){
+                  fGrupoOk=1;
+                  tmrGrOk=preGrOk;
+               }
          }
          else{
                tmrGrOk=preGrOk;
@@ -898,7 +912,6 @@ OUTPUT_C(0);
 //Configuracion de puertos   
 set_tris_a(0b00010010);
 set_tris_b(0b00001000);
-PORT_B_PULLUPS(false);
 set_tris_c(0b11000000);
 
 //Configuracion Analogicas
@@ -921,7 +934,7 @@ tmrLiIni=1;          //Tiempo para conexion inicial del sistema
 lcd_init();          //Inicio LCD
 rMenu=0;             //Pantalla ppal
 fActDisp=1;          //Escribir pantalla
-fActVal=1;           //Escribir pantalla
+fActVal=1;          //Escribir pantalla
 fFallaGR=0;          //reset falla grupo
 
 output_high(pBacklight);   //prendo backlight
@@ -933,7 +946,7 @@ lcd_putc('\f'); //limpiar display
 lcd_gotoxy(4,1);
 printf(lcd_putc,"ControlARG");
 lcd_gotoxy(1,2);
-printf(lcd_putc,"TA 380   Fw:6.00");
+printf(lcd_putc,"TA 380   Fw:6.10");
 RecuperaEEPROM();    //Leo parametros almacenados en la EEPROM
 fLeerHS=1;
 delay_ms(3500);
@@ -950,6 +963,7 @@ rFaApLi=kFaCoLi;
 rFaCoGr=kFaCoGr;
 rFaApGr=kFaCoGr;
 tFaGrMar=kFaParGr;
+rDyCeLi=preLiOk;
 
 if(fInterrup & input(pCO_LI)){//si esta en modo interruptor y esta cerrado el interruptor de linea
 //leo micro de linea para ver como estan las tensiones para no abrir el interruptor
@@ -964,11 +978,13 @@ if(fInterrup & input(pCO_LI)){//si esta en modo interruptor y esta cerrado el in
    }
 }
 Verifica_VLi();
-
+if (fTempFallaLi) fLiOKIni=1;
+else fLiOKIni=1;
+   
 if(fInterrup & input(pCO_GR)){//si esta en modo interruptor y esta cerrado el interruptor de Grupo
 //leo micro de linea para ver como estan las tensiones para no abrir el interruptor
    if (input(pFallaGr)){  //si esta vivo el micro de grupo
-     //lee_micro(0);
+     lee_micro(0);
          if(fRxOk){
             fRxOk=0;
             VRGr=rDataRx1;
@@ -988,6 +1004,10 @@ if (pul_1seg){
       fActVal=1;
       p_1seg0H=1;
 }
+if (pul_1min){
+      pul_1min=0;
+      p_1min=1;  
+}
 
 if(fActVal) vMenu();
 if(fActDisp) Menu(),fActVal=1;
@@ -1006,7 +1026,7 @@ if(fActDisp) Menu(),fActVal=1;
 if(p_250ms & input(pFallaLi)){ //antes p_1seg aumento tiempo de muestreo
    lee_micro(1);
    if(fRxOk){
-      //fRxOk=0;
+      fRxOk=0;
       VRLi=rDataRx1;
       VsLi=rDataRx2;
       VtLi=rDataRx3;
@@ -1019,7 +1039,7 @@ if(p_250ms & input(pFallaLi)){ //antes p_1seg aumento tiempo de muestreo
 //Lectura Tensiones Micro Grupo
 //--------------------------------------------------------------------------------------------
 if(p_250ms & input(pFallaGr)){ //antes p_1seg aumento tiempo de muestreo
-   //lee_micro(0);
+   lee_micro(0);
    if(fRxOk){
       fRxOk=0;
       VRGr=rDataRx1;
@@ -1071,11 +1091,12 @@ if(!fLineaOK & (rModoTransf==1)){                           //Si falla la linea 
 //--------------------------------------------------------------------------------------------
 //Cierre interruptor de linea
 //--------------------------------------------------------------------------------------------
-if(fLineaOK  & !input(pCo_GR) & (rModoTransf==1)& !fOALi){    //Si esta ok la linea y no esta metido el grupo electrogeno y esta en auto y no esta la salida de abrir
-         if (p_1seg & (fOCLi==0)) {
-            if (--rDyCeLi==0){
+if(fLineaOK   & (rModoTransf==1)& !fOALi){    //& !input(pCo_GR)   Si esta ok la linea y no esta metido el grupo electrogeno y esta en auto y no esta la salida de abrir
+         if (fLiOKIni) fOCLi=1,fLiOKIni=0;
+         if (p_1min & (fOCLi==0)) {
+            if (--rDyCeLi==0){ //
                   fOCLi=1;
-                  rDyCeLi=kDyCeLi;
+                  rDyCeLi=preLiOk;
             }
          }
          if (!fArrManual & !fArrRem)OArrGR=0;                  //conteo para apagar el grupo
@@ -1130,7 +1151,7 @@ if(fLineaOK  & !input(pCo_GR) & (rModoTransf==1)& !fOALi){    //Si esta ok la li
 //--------------------------------------------------------------------------------------------
 //Apertura interruptor de Grupo
 //--------------------------------------------------------------------------------------------
-if((fLineaOk |!fGrupoOK) & (rModoTransf==1)){    // Si retorna la linea y esta el contactor de grupo
+if((fOCLi |!fGrupoOK) & (rModoTransf==1)){    //fLineaOk Si retorna la linea y esta el contactor de grupo
 //Si esta configurado con interruptor
    if(fContactor){
       fOCGr =0;       //Abro contactor de grupo
@@ -1151,7 +1172,7 @@ if((fLineaOk |!fGrupoOK) & (rModoTransf==1)){    // Si retorna la linea y esta e
 //Cierre interrutpor de grupo
 //--------------------------------------------------------------------------------------------
 if(fGrupoOk & !fLineaOk & (rModoTransf==1) & !fOAGr){   //Si esta en falla la linea y listo el grupo y no esta conectado
-   if(p_1seg | (DyArrGROff==1)){
+   if(p_1min | (DyArrGROff==1)){ //p_1seg
       if((tmrConGR--==0) | (DyArrGROff==1)){      //demora al cierre de interruptor de grupo
                DyArrGROff=1;  // no hacer demora si ya esta en marcha el grupo y vuelve a fallar la red
                if(!input(pCo_LI)){
@@ -1209,13 +1230,14 @@ else
 
 //--------------------------------------------------------------------------------------------
 //Orden de marcha del grupo electrogeno
+//se cambia pulso de un segundo por pulso de un minuto
 //--------------------------------------------------------------------------------------------
 if (((!fLineaOK  & !fFallaGR) | fCO_GR) & (rModoTransf==1) & !OArrGr) fRunDelayArrGr=1;
 else  fRunDelayArrGr=0;
 
 if(fRunDelayArrGr | fAuxArrMan){                  //Si hay que arrancar el grupo
 //Delay al arranque del grupo electrogeno
-   if(p_1seg | fAuxArrMan){
+   if(p_1min | fAuxArrMan){//   p_1seg
       if((--tmrDyArrGr==0)| fAuxArrMan){                            //si paso el tiempo de demora al arranque del grupo
             OArrGR=1;                   //Inicio secuencia arranque grupo
             //Carga tiempos de arranque grupo
@@ -1467,6 +1489,7 @@ else{
 
 
 if (p_1seg)p_1seg=0;
+if (p_1min)p_1min=0;
 
 if (fGuardaHS){
    fGuardaHS=0;

@@ -130,13 +130,13 @@ void vMenu2(){
 Void vMenu3(){
 //         lcd_putc('\f');
          lcd_gotoxy(5,2);
-         printf(lcd_putc,"%3u Seg.",rTempVar);
+         printf(lcd_putc,"%3u Min.",rTempVar);
 }
 
 Void vMenu4(){
 //         lcd_putc('\f');
          lcd_gotoxy(5,2);
-         printf(lcd_putc,"%3u Seg.",rTempVar);
+         printf(lcd_putc,"%3u Min.",rTempVar);
 }
 
 Void vMenu5(){
@@ -148,7 +148,7 @@ Void vMenu5(){
 Void vMenu6(){
 //         lcd_putc('\f');
          lcd_gotoxy(5,2);
-         printf(lcd_putc,"%3u Seg.",rTempVar);
+         printf(lcd_putc,"%3u Min.",rTempVar);
 }
 
 Void vMenu7(){
@@ -227,6 +227,7 @@ Void vMenuParGr(){//18  operacion manual de la transferencia
 //}
 
 void vMenu18(){//Menu Ajustes Tension de Grupo
+//         lcd_putc('\f'); //limpiar display
          lcd_gotoxy(1,2);
          if (input(pFallaLi))
             printf(lcd_putc,"%3u",VRLi);//MAN
