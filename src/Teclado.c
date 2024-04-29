@@ -81,7 +81,7 @@ void TecMenu(){
                            if (rtempvar ==255)rtempvar=0;
                            break;
                            //Regulacion de tension minima
-                  case 2:  if (rTempvar < 150)rTempVar=150;
+                  case 2:  if (rTempvar < 180)rTempVar=180;
                            if (rtempvar >210)rtempVar=210;
                            break;
                            //Regulacion de tension maxima

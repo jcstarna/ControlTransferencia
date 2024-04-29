@@ -63,10 +63,13 @@ Revision 5.25 15/01/14
          25/12/14
          1.-Correccion para que no de la falla de contactores sl la linea o grupo esta en falla
          2.-Se saca que tenga que estar en automatico para el arranque del grupo desde la TA
+Revision 6.00
+         1.-Arranque remoto por entrada externa
+         2.-Se saco la igualacion de rDato1=chksum que antes eliminaba el control de error en la com
          */
 
 
-#include <16F886.h>
+#include <16f886.h>
 #fuses NOWDT,PROTECT,NOLVP,NODEBUG,HS
 #use delay(clock=10000000)
 #pragma use fast_io(A)
@@ -89,7 +92,7 @@ Revision 5.25 15/01/14
 #define  pAB_LI      PIN_C3   //OK Rele 3 Rele contactor de linea
 #Define  pClkLi      PIN_C4   //Autorizacion comunicación micro 2 PIN_C5
 #Define  pClkGr      PIN_C5   //Autorizacion comunicación micro 1 PIN_C4
-#Define  pTX         PIN_C6   //trasmision a ambos micros 
+#Define  pArrRem     PIN_C6   //trasmision a ambos micros pTX
 #Define  pFallaLi    PIN_C7   //Falla linea PIN_B3
 
 ///LCD
@@ -138,7 +141,7 @@ int const   kHsMarcha=19;   //direccion del primer byte de las horas de marcha (
 int const   kMinMarcha=21;    //direccion minutos e marcha
 
 int const   kTEvPare=45;   //preset tiempo ev pare
-
+int const   kDyArrRem=10;  //delay para aceptar
 //constantes de deteccion de falla de operacion de contactores o interruptores
 
 int const   kFaCoLi=10;     //2 segundos para falla a la conexion o desconexion
@@ -172,8 +175,8 @@ int1  fFalla=0;          //Alguna falla en transferencia pendiented de aceptar
 int1  fRxOk=0;
 
 //Flags fallas
-int1  fTempFallaGr=0; //flag indica que grupo esta ok falla = 0 ok = 1
-int1  fTempFallaLi=0; //flag indica que falla esta ok
+int1  fTempFallaGr=0;
+int1  fTempFallaLi=0;
 
 //Flag cada un segundo
 int1  pul_1seg=0;
@@ -196,6 +199,7 @@ int1  fGuardaHS=0;
 int1  fLeerHS=0;
 
 int1  fAuxArrMan=0;
+int1  fArrRem=0;
 int1  fPareManual=0;
 int1  fAuxFP=0;
 int1  fPareGr=0;
@@ -273,7 +277,7 @@ int8  rConfig=0;
 #bit  fContactor = rConfig.0
 #bit  fInterrup  = rConfig.1
 int8  fSimuTransf= 0;
-INT8  fArrManual=0;
+INT1  fArrManual=0;
 
 int1  Temp_Bool=0;
 int1  Temp_Bool1=0;
@@ -336,12 +340,14 @@ int1 fCO_GR=0;
 
 int8 rCO_LI=10;
 int8 rCO_GR=10;
+int8 rDyArrRem=10;
 
 int8 rTPreCeb=0;  //tiempo preseteado de cebador 
 int8 rTCeb=0;     //tiempo de cebador
 int8 rCeb=0;      //usar cebador
 #bit fCeb = rCeb.0
-
+int1 chkOk=0;
+int8 contador=0;
 // Declaración de Funciones ///////////////////////////////////////////////////
 
 void menu0(void);           
@@ -431,80 +437,76 @@ int8  i=0;
 int8  j=0;
 int8  Dato1=0;
 int16 vEscalado=0;
-
+contador++;
 chksum=0;
+//todos los delay 200 originalmente
 for(j=0;j<4;j++){//3 datos + chksum
-  
    //Recibe bit a bit
+   delay_us(300);
    for (i=0;i<8;i++){
          if (micro==1)output_low(pClkLi);     //led opto encendido pin en alto del 12f 
          else output_low(pClkGr);             //led opto encendido pin en alto del 12f
-         delay_us(150);
-         
+         delay_us(300);
          //leo dato por bit de falla
          if (Micro==1){ //micro de linea
                output_high(pClkLi);            //led opto apagado pin en bajo del 12f
-               delay_us(170);
+               delay_us(300);
                shift_right(&Dato1,1,input(pFallaLi));
-
                }
          if (Micro==0){ //micro de grupo
                output_high(pClkGr);   //led opto apagado pin en bajo del 12f
-               delay_us(170);
+               delay_us(300);
                shift_right(&Dato1,1,input(pFallaGr));
                }
-         }
+   }
       *((&rDataRx1) + j)=Dato1;
       if (j!=3){
-         chksum=chksum+Dato1;
-         
+         chksum=chksum+Dato1; 
          if (Micro==0)   
             vEscalado=(int16)Dato1*rGanGr;//128;
          else
             vEscalado=(int16)Dato1*rGanLi;//128;
             
-         Dato1 = (int8)(vEscalado/100);
+         Dato1 =(int8)(vEscalado/100);
          *((&rDataRx1) + j)=Dato1;
       }
       else{
-         ChkRx=Dato1;
-         if (Dato1==chksum)fRxOk=1;
-      }
+         //ChkRx=Dato1;
+         if (Dato1==chksum) fRxOk=1;
+         else fRxOk=0;
    }
 }
-
-
-
+}
 void Verifica_VLi(void){
       if (VRLi > VRmax)
          bit_set(rFaLi,0);
-      if (bit_test(rFaLi,0));
-         if (VRLi < (VRmax-5)) bit_clear(rFaLi,0);
+      else
+         bit_clear(rFaLi,0);
          
       if (VSLi > VRmax)
          bit_set(rFaLi,1);
-      if (bit_test(rFaLi,1));
-         if (VsLi < (VRmax-10))bit_clear(rFaLi,1);
+      else
+         bit_clear(rFaLi,1);
          
       if (VTLi > VRmax)
          bit_set(rFaLi,2);
-      if (bit_test(rFaLi,2));     
-         if (VtLi < (VRmax-10))bit_clear(rFaLi,2);
+      else
+         bit_clear(rFaLi,2);
       
-      if (VRLi < (VRmin))
+      if (VRLi < VRmin)
          bit_set(rFaLi,3);
-      if (bit_test(rFaLi,3));
-         if (VRLi >(VRmin+10))bit_clear(rFaLi,3);
+      else
+         bit_clear(rFaLi,3);
          
-      if (VSLi < (VRmin))
+      if (VSLi < VRmin)
          bit_set(rFaLi,4);
-      if (bit_test(rFaLi,4));
-         if (VsLi >(VRmin+10))bit_clear(rFaLi,4);
+      else
+         bit_clear(rFaLi,4);
          
-      if (VTLi < (VRmin))
+      if (VTLi < VRmin)
          bit_set(rFaLi,5);
-      if (bit_test(rFaLi,5))
-         if (VtLi >(VRmin+10))bit_clear(rFaLi,5);
+      else
+         bit_clear(rFaLi,5);
       
       if (!input(pFallaLi))
          bit_set(rFaLi,6);
@@ -523,12 +525,6 @@ void Verifica_VGr(void){
       else
          bit_clear(rFaGr,0);
          
-      if (VRGr < VRmin)
-         bit_set(rFaGr,3);
-      else
-         bit_clear(rFaGr,3);
-      
-      
       if (VSGr > VRmax)
          bit_set(rFaGr,1);
       else
@@ -539,7 +535,10 @@ void Verifica_VGr(void){
       else
          bit_clear(rFaGr,2);
       
-
+      if (VRGr < VRmin)
+         bit_set(rFaGr,3);
+      else
+         bit_clear(rFaGr,3);
          
       if (VSGr < VRmin)
          bit_set(rFaGr,4);
@@ -598,7 +597,7 @@ void  ScanTeclado(){
                                        rMenu=38;//menu ajuste de tensiones de linea
                                        fTeclaOK=1;
                                        fActDisp=1;
-                                    }
+                                   }
                                    break;
                            default:fTeclaOK=0;
                                    rInmunidad=kInmuni;
@@ -818,11 +817,26 @@ if (--tmr250ms==0){
    tmr250ms=ktmr250;
 }
 
-//Filtrado de entradas de confirmacion
-//int1 fCO_LI=0;
-//int1 fCO_GR=0;
-
-//int8 rCO_GR=10;
+if (!fArrRem){
+   if (input(pArrRem)){
+      if(rDyArrRem--==0){
+         rDyArrRem=kDyArrRem;
+         fArrRem=1;
+      }
+   }
+   else
+         rDyArrRem=kDyArrRem;
+}
+if (fArrRem){
+   if (!input(pArrRem)){
+      if(rDyArrRem--==0){
+         rDyArrRem=kDyArrRem;
+         fArrRem=0;
+      }
+   }
+   else
+         rDyArrRem=kDyArrRem;
+}
 
 if (fCO_LI){             //si ya esta confirmado
    if(!input(pCO_LI)){   //si no esta la entrada
@@ -884,7 +898,8 @@ OUTPUT_C(0);
 //Configuracion de puertos   
 set_tris_a(0b00010010);
 set_tris_b(0b00001000);
-set_tris_c(0b10000000);
+PORT_B_PULLUPS(false);
+set_tris_c(0b11000000);
 
 //Configuracion Analogicas
 setup_adc(NO_ANALOGS);
@@ -898,7 +913,7 @@ fDataOkGr=0;         //Falta enviar datos al micro de grupo
 fDataOkLi=0;         //Falta enviar datos al micro de linea
 output_high(pClkLi);  //Pin en bajo del clock micro linea
 output_high(pClkGr);  //Pin en bajo clock micro grupo
-output_high(pTx);    //cero para el 12f
+//output_high(pTx);    //cero para el 12f
 rInmunidad=kInmuni;
 
 tmrLiIni=1;          //Tiempo para conexion inicial del sistema
@@ -906,7 +921,7 @@ tmrLiIni=1;          //Tiempo para conexion inicial del sistema
 lcd_init();          //Inicio LCD
 rMenu=0;             //Pantalla ppal
 fActDisp=1;          //Escribir pantalla
-fActVal=1;          //Escribir pantalla
+fActVal=1;           //Escribir pantalla
 fFallaGR=0;          //reset falla grupo
 
 output_high(pBacklight);   //prendo backlight
@@ -918,7 +933,7 @@ lcd_putc('\f'); //limpiar display
 lcd_gotoxy(4,1);
 printf(lcd_putc,"ControlARG");
 lcd_gotoxy(1,2);
-printf(lcd_putc,"TA 380  Fw:5.25A");
+printf(lcd_putc,"TA 380   Fw:6.00");
 RecuperaEEPROM();    //Leo parametros almacenados en la EEPROM
 fLeerHS=1;
 delay_ms(3500);
@@ -948,13 +963,12 @@ if(fInterrup & input(pCO_LI)){//si esta en modo interruptor y esta cerrado el in
          } 
    }
 }
+Verifica_VLi();
 
-   Verifica_VLi();
-   
 if(fInterrup & input(pCO_GR)){//si esta en modo interruptor y esta cerrado el interruptor de Grupo
 //leo micro de linea para ver como estan las tensiones para no abrir el interruptor
    if (input(pFallaGr)){  //si esta vivo el micro de grupo
-     lee_micro(0);
+     //lee_micro(0);
          if(fRxOk){
             fRxOk=0;
             VRGr=rDataRx1;
@@ -992,7 +1006,7 @@ if(fActDisp) Menu(),fActVal=1;
 if(p_250ms & input(pFallaLi)){ //antes p_1seg aumento tiempo de muestreo
    lee_micro(1);
    if(fRxOk){
-      fRxOk=0;
+      //fRxOk=0;
       VRLi=rDataRx1;
       VsLi=rDataRx2;
       VtLi=rDataRx3;
@@ -1005,7 +1019,7 @@ if(p_250ms & input(pFallaLi)){ //antes p_1seg aumento tiempo de muestreo
 //Lectura Tensiones Micro Grupo
 //--------------------------------------------------------------------------------------------
 if(p_250ms & input(pFallaGr)){ //antes p_1seg aumento tiempo de muestreo
-   lee_micro(0);
+   //lee_micro(0);
    if(fRxOk){
       fRxOk=0;
       VRGr=rDataRx1;
@@ -1021,7 +1035,7 @@ if (p_250ms)p_250ms=0;
 //--------------------------------------------------------------------------------------------
 //Control de limites de tension linea
 //--------------------------------------------------------------------------------------------
-   Verifica_VLi();
+Verifica_VLi();
 
    
 //--------------------------------------------------------------------------------------------
@@ -1064,7 +1078,7 @@ if(fLineaOK  & !input(pCo_GR) & (rModoTransf==1)& !fOALi){    //Si esta ok la li
                   rDyCeLi=kDyCeLi;
             }
          }
-         if (fArrManual==0)OArrGR=0;                  //conteo para apagar el grupo
+         if (!fArrManual & !fArrRem)OArrGR=0;                  //conteo para apagar el grupo
          //Si esta config con interruptor y ya se Cerro el interruptor-desenergizo bobina
          if(fInterrup & input(pCO_LI)) {
                fOCLi=0;
@@ -1228,12 +1242,15 @@ if(fArrManual & (rModoTransf==1) & !fLineaOK){
 }
 
 //FLANCO DE LA ORDEN DE MARCHA
-if(fArrManual & !fAuxFP) fAuxArrMan=1;
+if((fArrManual) & !fAuxFP) fAuxArrMan=1;
+
+if((fArrRem) & !fAuxFP) fAuxArrMan=1;
 //FLANCO DE LA ORDEN DE PARADA
-if (!fArrManual & fAuxFP) fPareManual=1,OArrGR=0;
+
+if (!fArrManual & (!fArrRem & !input(pCo_GR)) & fAuxFP) fPareManual=1,OArrGR=0;
 
 //IGUALO FLANCO CON ORDEN
-if(fArrManual)fAuxFP=1;
+if(fArrManual | fArrRem) fAuxFP=1;
 else fAuxFP=0;
 
 //--------------------------------------------------------------------------------------------

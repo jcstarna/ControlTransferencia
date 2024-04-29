@@ -97,10 +97,12 @@ void vMenu0(){//menu ppal
          if (rModoTransf==1){
                if (fRunDelayArrGr)printf(lcd_putc,"ESP");
                else if (OArrGR &!fGrupoOk)printf(lcd_putc,"ARR");
-               else if (fGrupoOk & OArrGR & !fCO_GR)printf(lcd_putc,"PRE"); 
+               else if (fGrupoOk & OArrGR & !fCO_GR & !fArrManual & !fArrRem)printf(lcd_putc,"PRE"); 
                else if (fGrupoOk & OArrGR & fCO_GR)printf(lcd_putc,"CON");
                else if (fGrupoOk & !OArrGR & !fCO_GR)printf(lcd_putc,"PAR");
-               else if (!fGrupoOk & !OArrGR) printf(lcd_putc,"PDO");  
+               else if (!fGrupoOk & !OArrGR & !fArrRem) printf(lcd_putc,"PDO");  
+               else if (fGrupoOk & OArrGR & fArrRem & !fCO_GR)printf(lcd_putc,"REM");
+               else if (fGrupoOk & OArrGR & fArrManual & !fCO_GR)printf(lcd_putc,"USR");
          }
          else 
                printf(lcd_putc,"   ");
@@ -225,7 +227,6 @@ Void vMenuParGr(){//18  operacion manual de la transferencia
 //}
 
 void vMenu18(){//Menu Ajustes Tension de Grupo
-//         lcd_putc('\f'); //limpiar display
          lcd_gotoxy(1,2);
          if (input(pFallaLi))
             printf(lcd_putc,"%3u",VRLi);//MAN

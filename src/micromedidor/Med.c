@@ -62,7 +62,6 @@ if(input(pClock) & !fRX_Start){
 if(!input(pClock) & fRX_Start){
    output_bit(pFalla,(shift_right(&Dato,1,0)));
    fRX_Start=1;    //indico que estoy recibiendo  
-   
    //controla si envio todos los bits del Byte
    if (BitCount++==7) {     //llegaron todos los bits del byte
      // *(((int8*)&rVR) + ByteCount) = DataRX;
@@ -95,7 +94,7 @@ void RTCC_isr() {                      // Interrupción Timer 0
    if (fRX_Start){
       if (--RXTimeOut==0){
          fRX_Start=0;
-         RXTimeOut=100;                //prueba
+         RXTimeOut=300;                //prueba
          BitCount=0;
          ByteCount=0;
          output_high(pFalla);
@@ -125,7 +124,6 @@ SETUP_ADC_PORTS(sAN0|sAN1|sAN2|VSS_VDD);
 SET_ADC_CHANNEL(0);
 //Delay_ms(500);
 
-
 //Interrupciones
 ENABLE_INTERRUPTS(INT_RTCC);     //Interrupcion por timer0
 ENABLE_INTERRUPTS(INT_RA3);      //Interrupcion por cambio en el pin Clock
@@ -133,12 +131,8 @@ ENABLE_INTERRUPTS(GLOBAL);
 
 //Informar al micro ppal que arranco, para que transmita los datos
 output_high(pFalla);
-fDataOk=0;
-
    while (TRUE) {
-   
-
-           
+         Delay_ms(1500);   //2000
             //-------------------------
             //Medicion de tensiones
             SET_ADC_CHANNEL(0);
@@ -151,28 +145,25 @@ fDataOk=0;
                promedio=0;
                i=0;
             SET_ADC_CHANNEL(1);
+             Delay_ms(10);
             for (i=0;i<240;i++){
                Delay_ms(1);
                tempVS=read_ADC();
                Promedio = Promedio  + tempVS;
             }
-               rVS = (int8)(promedio/240);
+               rVS =(int8)(promedio/240);
                promedio=0;
                i=0;   
-               
+             Delay_ms(10);   
             SET_ADC_CHANNEL(2);
             for (i=0;i<240;i++){
                Delay_ms(2);
                tempVT=read_ADC();
                Promedio = Promedio + tempVT;
             }
-               rVT = (int8)(promedio/240);
+               rVT =(int8)(promedio/240);
                promedio=0;
                i=0; 
-            
-
-            
-            
-
+               
    }//Fin While infinito   
 }//Fin Main
