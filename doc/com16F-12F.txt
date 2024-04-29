@@ -1,0 +1,34 @@
+Comunicacion 16F-12F
+
+PIC16F
+1.-El estado de reposo del clock de la comunicacion con ambos pines es en estado bajo.
+2.-Cuando se quiere iniciar la comunicacion con algun micro se sube el clock.
+3.-Se espera un nivel alto en la pata de falla del micro con el que quiero comunicarme, se inicia timer de watchdog para evitar espera por siempre.
+4.-Con nivel alto en pata de falla se envia los datos.
+5.-Se espera un nivel bajo del pic12F para confirmar recepcion, con un watchdog para timeout.
+
+El dato valido es en el flanco descendente del pin de clock
+
+PIC12F
+Aca hay varias posibilidades.
+1.-Transferencia de datos al inicializarce el pic12F (pin falla nivel alto)
+2.-Transf de datos al estar ya corriendo y estar con falla (pin Falla nivel bajo)
+3.-Transf de datos al estar ya corriendo y estar sin falla (pin falla nivel alto)
+
+Se supone que son las 3 posibilidades iguales ya que independientemente de como este el primer paso es
+poner a nivel alto el pin de falla.
+
+Pasos comunicacion.
+
+1.-Al recibir un flanco ascendente del pin de clock se pone en alto la pata de falla (el 16F envia datos)
+2.-Se reciben los datos
+3.-Si los datos son correctos (cantidad y checksum) se baja la pata de falla para confirmar
+
+
+
+/*Sugerencia a probar
+mantener la pata del clock baja, levantarla y en el 12f detectar esto y levantar la pata de alarma para confirmar que espera comunicacion
+despues de eso enviar comunicacion y esperar en el 16f la confirmacion de recepcion con una bajada de la pata de alarma.
+si el 12f coincide que esta todo ok, el primer paso se hace rapido, sin espera, si esta muerto, poner un timer para que no quede esperando eternamente.
+en la confirmacion hacer lo mismo al esperar el 16f por la confirmacion del micro 12f.
+*/
