@@ -25,24 +25,18 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
-      <itemPath>../src/LCD.c</itemPath>
-      <itemPath>../src/TAC.c</itemPath>
-      <itemPath>../src/Teclado.c</itemPath>
-      <itemPath>../src/menu.c</itemPath>
-      <itemPath>../src/menu1.c</itemPath>
-      <itemPath>../src/pp.c</itemPath>
-      <itemPath>../src/valMenu.c</itemPath>
+      <itemPath>../src/micromedidor1572/Med.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
-    <Elem>../src</Elem>
+    <Elem>../src/micromedidor1572</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
     <conf name="default" type="2">
       <toolsSet>
         <developmentServer>localhost</developmentServer>
-        <targetDevice>PIC18F25K22</targetDevice>
+        <targetDevice>PIC12F1572</targetDevice>
         <targetHeader></targetHeader>
         <targetPluginBoard></targetPluginBoard>
         <platformTool>noID</platformTool>
@@ -51,7 +45,7 @@
         <platform>3</platform>
       </toolsSet>
       <packs>
-        <pack name="PIC18F-K_DFP" vendor="Microchip" version="1.13.292"/>
+        <pack name="PIC12-16F1xxx_DFP" vendor="Microchip" version="1.7.242"/>
       </packs>
       <ScriptingSettings>
       </ScriptingSettings>
@@ -80,18 +74,6 @@
         <makeCustomizationEnableLongLines>false</makeCustomizationEnableLongLines>
         <makeCustomizationNormalizeHexFile>false</makeCustomizationNormalizeHexFile>
       </makeCustomizationType>
-      <item path="../src/LCD.c" ex="true" overriding="false">
-      </item>
-      <item path="../src/Teclado.c" ex="true" overriding="false">
-      </item>
-      <item path="../src/menu.c" ex="true" overriding="false">
-      </item>
-      <item path="../src/menu1.c" ex="true" overriding="false">
-      </item>
-      <item path="../src/pp.c" ex="true" overriding="false">
-      </item>
-      <item path="../src/valMenu.c" ex="true" overriding="false">
-      </item>
       <ccscompiler>
         <property key="cc-compat" value="0"/>
         <property key="ccs-insert-device" value="false"/>

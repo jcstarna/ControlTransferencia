@@ -30,12 +30,12 @@ ifeq ($(TYPE_IMAGE), DEBUG_RUN)
 IMAGE_TYPE=debug
 OUTPUT_SUFFIX=cof
 DEBUGGABLE_SUFFIX=cof
-FINAL_IMAGE=${DISTDIR}/Transferencia.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
+FINAL_IMAGE=${DISTDIR}/Micromedidor1572.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
 else
 IMAGE_TYPE=production
 OUTPUT_SUFFIX=hex
 DEBUGGABLE_SUFFIX=cof
-FINAL_IMAGE=${DISTDIR}/Transferencia.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
+FINAL_IMAGE=${DISTDIR}/Micromedidor1572.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
 endif
 
 ifeq ($(COMPARE_BUILD), true)
@@ -51,17 +51,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=../src/TAC.c
+SOURCEFILES_QUOTED_IF_SPACED=../src/micromedidor1572/Med.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/_ext/1360937237/TAC.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/_ext/1360937237/TAC.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/_ext/845616257/Med.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/_ext/845616257/Med.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/_ext/1360937237/TAC.o
+OBJECTFILES=${OBJECTDIR}/_ext/845616257/Med.o
 
 # Source Files
-SOURCEFILES=../src/TAC.c
+SOURCEFILES=../src/micromedidor1572/Med.c
 
 
 
@@ -82,38 +82,38 @@ FIXDEPS=fixDeps
 ifneq ($(INFORMATION_MESSAGE), )
 	@echo $(INFORMATION_MESSAGE)
 endif
-	${MAKE}  -f nbproject/Makefile-default.mk ${DISTDIR}/Transferencia.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
+	${MAKE}  -f nbproject/Makefile-default.mk ${DISTDIR}/Micromedidor1572.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
 
 MP_CC="C:\Program Files (x86)\PICC\CCSCON.exe"
 MP_LD="C:\Program Files (x86)\PICC\CCSCON.exe"
-sourceline.device=sourceline="\#device PIC18F25K22"
+sourceline.device=sourceline="\#device PIC12F1572"
 sourceline.xccompat=sourceline="\#device ANSI" sourceline="\#device PASS_STRINGS=IN_RAM" sourceline="\#device CONST=READ_ONLY" sourceline="\#case" sourceline="\#TYPE SIGNED" sourceline="\#type INT=16, LONG=32"
 sourceline.gcccompat=sourceline="\#device ANSI" sourceline="\#device PASS_STRINGS=IN_RAM" sourceline="\#device CONST=READ_ONLY" sourceline="\#case" sourceline="\#TYPE SIGNED"
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: compile
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
-${OBJECTDIR}/_ext/1360937237/TAC.o: ../src/TAC.c  nbproject/Makefile-${CND_CONF}.mk 
-	${MKDIR} ${OBJECTDIR}/_ext/1360937237 
+${OBJECTDIR}/_ext/845616257/Med.o: ../src/micromedidor1572/Med.c  nbproject/Makefile-${CND_CONF}.mk 
+	${MKDIR} ${OBJECTDIR}/_ext/845616257 
 ifeq (2,1) 
 	${MKDIR} ${DISTDIR} 
-	${MP_CC}  out="${OBJECTDIR}\_ext\1360937237"  ../src/TAC.c +FH +DF +CC #__DEBUG=1 +ICD +Y=9 +EA I+="C:\Program Files (x86)\PICC\Devices" I+="C:\Program Files (x86)\PICC\Drivers" +DF +LN +T +A +M +J +Z -P #__18F25K22=1 
-	@mv ${OBJECTDIR}/_ext/1360937237/TAC.cof "${DISTDIR}/Transferencia.X.${IMAGE_TYPE}.cof" 
-	@mv ${OBJECTDIR}/_ext/1360937237/TAC.hex "${DISTDIR}/Transferencia.X.${IMAGE_TYPE}.hex"
+	${MP_CC}  out="${OBJECTDIR}\_ext\845616257"  ../src/micromedidor1572/Med.c +FM +DF +CC #__DEBUG=1 +ICD +Y=9 +EA I+="C:\Program Files (x86)\PICC\Devices" I+="C:\Program Files (x86)\PICC\Drivers" +DF +LN +T +A +M +J +Z -P #__12F1572=1 
+	@mv ${OBJECTDIR}/_ext/845616257/Med.cof "${DISTDIR}/Micromedidor1572.X.${IMAGE_TYPE}.cof" 
+	@mv ${OBJECTDIR}/_ext/845616257/Med.hex "${DISTDIR}/Micromedidor1572.X.${IMAGE_TYPE}.hex"
 else 
-	${MP_CC}  out=""${OBJECTDIR}\_ext\1360937237"" ../src/TAC.c +EXPORT +FH +DF +CC #__DEBUG=1 +ICD +Y=9 +EA I+="C:\Program Files (x86)\PICC\Devices" I+="C:\Program Files (x86)\PICC\Drivers" +DF +LN +T +A +M +J +Z -P #__18F25K22=1 +EXPORTD="${OBJECTDIR}/_ext/1360937237"  
+	${MP_CC}  out=""${OBJECTDIR}\_ext\845616257"" ../src/micromedidor1572/Med.c +EXPORT +FM +DF +CC #__DEBUG=1 +ICD +Y=9 +EA I+="C:\Program Files (x86)\PICC\Devices" I+="C:\Program Files (x86)\PICC\Drivers" +DF +LN +T +A +M +J +Z -P #__12F1572=1 +EXPORTD="${OBJECTDIR}/_ext/845616257"  
 	
 endif 
 	
 else
-${OBJECTDIR}/_ext/1360937237/TAC.o: ../src/TAC.c  nbproject/Makefile-${CND_CONF}.mk 
-	${MKDIR} ${OBJECTDIR}/_ext/1360937237 
+${OBJECTDIR}/_ext/845616257/Med.o: ../src/micromedidor1572/Med.c  nbproject/Makefile-${CND_CONF}.mk 
+	${MKDIR} ${OBJECTDIR}/_ext/845616257 
 ifeq (2,1) 
 	${MKDIR} ${DISTDIR} 
-	${MP_CC}  out="${OBJECTDIR}\_ext\1360937237"  ../src/TAC.c +FH +DF +CC +Y=9 +EA I+="C:\Program Files (x86)\PICC\Devices" I+="C:\Program Files (x86)\PICC\Drivers" +DF +LN +T +A +M +J +Z -P #__18F25K22=1 
-	@mv ${OBJECTDIR}/_ext/1360937237/TAC.cof "${DISTDIR}/Transferencia.X.${IMAGE_TYPE}.cof" 
-	@mv ${OBJECTDIR}/_ext/1360937237/TAC.hex "${DISTDIR}/Transferencia.X.${IMAGE_TYPE}.hex"
+	${MP_CC}  out="${OBJECTDIR}\_ext\845616257"  ../src/micromedidor1572/Med.c +FM +DF +CC +Y=9 +EA I+="C:\Program Files (x86)\PICC\Devices" I+="C:\Program Files (x86)\PICC\Drivers" +DF +LN +T +A +M +J +Z -P #__12F1572=1 
+	@mv ${OBJECTDIR}/_ext/845616257/Med.cof "${DISTDIR}/Micromedidor1572.X.${IMAGE_TYPE}.cof" 
+	@mv ${OBJECTDIR}/_ext/845616257/Med.hex "${DISTDIR}/Micromedidor1572.X.${IMAGE_TYPE}.hex"
 else 
-	${MP_CC}  out=""${OBJECTDIR}\_ext\1360937237"" ../src/TAC.c +EXPORT +FH +DF +CC +Y=9 +EA I+="C:\Program Files (x86)\PICC\Devices" I+="C:\Program Files (x86)\PICC\Drivers" +DF +LN +T +A +M +J +Z -P #__18F25K22=1 +EXPORTD="${OBJECTDIR}/_ext/1360937237"  
+	${MP_CC}  out=""${OBJECTDIR}\_ext\845616257"" ../src/micromedidor1572/Med.c +EXPORT +FM +DF +CC +Y=9 +EA I+="C:\Program Files (x86)\PICC\Devices" I+="C:\Program Files (x86)\PICC\Drivers" +DF +LN +T +A +M +J +Z -P #__12F1572=1 +EXPORTD="${OBJECTDIR}/_ext/845616257"  
 	
 endif 
 	
@@ -122,22 +122,22 @@ endif
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: link
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
-${DISTDIR}/Transferencia.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk    
+${DISTDIR}/Micromedidor1572.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk    
 	${MKDIR} ${DISTDIR} 
 ifeq (2,1) 
 	
 else 
-	${MP_LD}   out="${DISTDIR}"  +FH +DF +CC LINK=Transferencia.X.${IMAGE_TYPE}.hex=${OBJECTDIR}/_ext/1360937237/TAC.o +Y=9 +EA I+="C:\Program Files (x86)\PICC\Devices" I+="C:\Program Files (x86)\PICC\Drivers" +DF +LN +T +A +M +J +Z -P
+	${MP_LD}   out="${DISTDIR}"  +FM +DF +CC LINK=Micromedidor1572.X.${IMAGE_TYPE}.hex=${OBJECTDIR}/_ext/845616257/Med.o +Y=9 +EA I+="C:\Program Files (x86)\PICC\Devices" I+="C:\Program Files (x86)\PICC\Drivers" +DF +LN +T +A +M +J +Z -P
 	
 endif 
 	
 else
-${DISTDIR}/Transferencia.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk   
+${DISTDIR}/Micromedidor1572.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk   
 	${MKDIR} ${DISTDIR} 
 ifeq (2,1) 
 	
 else 
-	${MP_LD}   out="${DISTDIR}"  +FH +DF +CC LINK=Transferencia.X.${IMAGE_TYPE}.hex=${OBJECTDIR}/_ext/1360937237/TAC.o +Y=9 +EA I+="C:\Program Files (x86)\PICC\Devices" I+="C:\Program Files (x86)\PICC\Drivers" +DF +LN +T +A +M +J +Z -P
+	${MP_LD}   out="${DISTDIR}"  +FM +DF +CC LINK=Micromedidor1572.X.${IMAGE_TYPE}.hex=${OBJECTDIR}/_ext/845616257/Med.o +Y=9 +EA I+="C:\Program Files (x86)\PICC\Devices" I+="C:\Program Files (x86)\PICC\Drivers" +DF +LN +T +A +M +J +Z -P
 	
 endif 
 	

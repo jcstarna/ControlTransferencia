@@ -1,4 +1,4 @@
-#include <12F683.h>
+#include <12F1572.h>
 #DEVICE ADC=10
 #fuses INTRC_IO,NOWDT,NOPROTECT,NOMCLR
 #use delay(clock=4000000)
@@ -87,7 +87,7 @@ if(!input(pClock) & fRX_Start){
 
 
 
-#int_RTCC
+#int_TIMER0
 void RTCC_isr() {                      // Interrupción Timer 0
 //Watch dog de la comunicacion
 //para evitar que el micro quede siempre en recepcion
@@ -126,7 +126,7 @@ SET_ADC_CHANNEL(0);
 //Delay_ms(500);
 
 //Interrupciones
-ENABLE_INTERRUPTS(INT_RTCC);     //Interrupcion por timer0
+ENABLE_INTERRUPTS(INT_TIMER0);     //Interrupcion por timer0
 ENABLE_INTERRUPTS(INT_RA3);      //Interrupcion por cambio en el pin Clock
 ENABLE_INTERRUPTS(GLOBAL);
 

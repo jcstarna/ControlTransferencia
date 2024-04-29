@@ -34,4 +34,4 @@ MP_CC_DIR="C:\Program Files (x86)\PICC"
 # MP_AS_DIR is not defined
 MP_LD_DIR="C:\Program Files (x86)\PICC"
 # MP_AR_DIR is not defined
-DFP_DIR=C:/Program Files/Microchip/MPLABX/v6.20/packs/Microchip/PIC18F-K_DFP/1.13.292
+DFP_DIR=C:/Program Files/Microchip/MPLABX/v6.20/packs/Microchip/PIC12-16F1xxx_DFP/1.7.242

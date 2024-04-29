@@ -1,8 +1,8 @@
 [PROJECT]
 Target=dist\default\production\Transferencia.X.production.hex
-Processor_Text=PIC16F886
+Processor_Text=PIC18F25K22
 CCSVersion=5.093
-Compiler=PCM
+Compiler=PCH
 [Target Data]
 FileList=$linker.c
 [dist\default\production\Transferencia.X.production.c]

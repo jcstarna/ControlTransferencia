@@ -1,6 +1,6 @@
 [PROJECT]
 Target=dist\default\production\Micromedidor.X.production.hex
-Processor_Text=PIC12F675
+Processor_Text=PIC12F683
 CCSVersion=5.093
 Compiler=PCM
 [Target Data]
