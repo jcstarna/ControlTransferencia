@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////          PROYECTO TRANSFERENCIA AUTOMATICA FONDO DE PANEL
 ////FECHA:30/03/2013
-////REVISION: 2.00
+////REVISION: 3.00
 ////AUTOR:CRTARG
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -15,15 +15,20 @@ Revision 1.00: 30/03/13
 Revision 2.00: 01/01/14
    Revision
    
-Revision 3.00: 
-   Agregado de comunicacion
+Revision 2.01: 08/03/21
+   Agregado de arranque de motor por se~nal externa pin A4
+   
+Revision 3.00: 14/09/21
+   Agregado de arranque remoto.
+   Modificacion de hardware
+   
          */
 
 
 #include <16F886.h>
 #DEVICE ADC=10
-#fuses NOWDT,PROTECT,NOLVP,NODEBUG,HS
-#use delay(clock=10000000)
+#fuses INTRC_IO,NOWDT,PROTECT,NOLVP,NODEBUG
+#use delay(clock=8000000)
 #USE RS232 (baud=9600, xmit=PIN_B7,rcv=PIN_B6)
 #pragma use fast_io(A)
 #pragma use fast_io(B)
@@ -36,13 +41,13 @@ Revision 3.00:
 #Define  pStatusLed  PIN_C7   //Falla linea PIN_B3
 #define  pCO_GR      PIN_C6   //OK FP confirmacion grupo
 #Define  pCO_LI      PIN_C5   //OK FP confirmacion linea
-#Define  pCeb        PIN_A4   //CONFIGURAR CEBADOR O PARE POR EV
+#define  pArrRem     PIN_C4   //Arranque por senal externa
 //RELES
-#define  pCE_LI      PIN_C4   //OK FP Rele contactor de linea
-#Define  pCE_GR      PIN_C3   //OK FP Rele contactor de grupo
-#Define  pReleParGr  PIN_C2   //OK FP Rele contacto grupo
-#Define  pReleArrGr  PIN_C1   //OK FP Rele arranque grupo 
-#Define  pCebador    PIN_C0   //OK FP Rele cebador
+#define  pCE_LI      PIN_A6   //OK FP Rele contactor de linea
+#Define  pCE_GR      PIN_C0   //OK FP Rele contactor de grupo
+#Define  pReleParGr  PIN_C1   //OK FP Rele contacto grupo
+#Define  pReleArrGr  PIN_C2   //OK FP Rele arranque grupo 
+#Define  pCebador    PIN_C3   //OK FP Rele cebador
 
 //ANALOGICAS
 //tensiones de linea
@@ -62,14 +67,13 @@ Revision 3.00:
 #define  pAccArr     3  //canal x  Tiempo accionamiento arranque
 #define  ptCebador   4  //canal x  Tiempo de accionamiento cebador
 
-#byte   TXSTA_REG = 0x098
-#bit    TRMT = TXSTA_REG.1
 
 // CONSTANTES /////////////////////////////////////////////////////////////////
 //int const   kInmuni=10;    // 10mhz - 10;
 int const   kTimeOut=5;    //time out de espera de respuesta de micros F12
-int const   k1Seg=76;      //conteo para lograr 1 segundo con cristal de 10mhz
-int const   kTmr250=19;    //Constante para tener 250 ms.
+int const   k1Seg=61;      //76 conteo para lograr 1 segundo con cristal de 10mhz
+int const   kTmr250=15;    //19 Constante para tener 250 ms.
+int const   kDyArrRem=3;   //tiempo en aceptar cambio de estado pin arr remoto
 
 //constantes de posicion en la eeprom de los valores de configuracion
 int const   kVmin=0;       //tension de falla por bajo
@@ -96,7 +100,9 @@ int const   kCebador=17;   //usa rele de alarma para activar cebador
 int const   kFaCoLi=4;     //2 segundos para falla a la conexion o desconexion
 int const   kFaCoGr=4;     //idem para grupo
 int const   kFaParGr=20;   //tiempo de falla a la parada de grupo
-int const   kTEvPare=20;
+
+//inmunidad para entrada de arranque remoto
+int const   kDyArrRemoto=3;//750ms cerrado el contacto arranca grupo en modo remoto (mantenimiento en grupos nafteros)
 
 // VARIABLES EN RAM ///////////////////////////////////////////////////////////
 
@@ -146,10 +152,6 @@ int16  tVRLi=0;
 int16  tVSLi=0;
 int16  tVTLi=0;
 
-// INCLUDES   /////////////////////////////////////////////////////////////////
-#INCLUDE "modbus.h"
-#INCLUDE "modbus.c"
-
 //estado de la transferencia
 int16 Estado=0; //aca se cargan los parametros para hacer titilar el led de estado
 //Estados
@@ -163,6 +165,7 @@ int16 Estado=0; //aca se cargan los parametros para hacer titilar el led de esta
 #define kGrCoFa    0b1010100000000000       //Fallo confirmacion grupo 3 destellos
 #define kLiCoFa    0b1010101000000000       //Fallo confirmacion linea 4 destellos
 #define kGrFaPar   0b1010101010000000       //Fallo grupo no paro 5 destellos
+#define kArrRem    0b1010101010100000       //Arranque mediante entrada externa 
 
 //Tiempos de transferencia
 //Grupo
@@ -187,6 +190,8 @@ int8  preFVLi=3;     //antes 5 Preset de tiempo de falla tension de linea
 int8  preLiOk=3;     //antes 5 Preset de tiempo de reotorno de linea OK
 int8  TmrLiIni=1;    //Tiempo para cuando aparece la linea y no esta el grupo electrogeno
 
+//filtro entrada de arr remoto
+int8  rDyArrRem=kDyArrRem;
 
 //Contador para tener un segundo
 int8  tmr1seg=k1Seg; // contador para lograr 1 segundo 
@@ -204,7 +209,6 @@ int8  fSimuTransf= 0;
 int1  Temp_Bool=0;
 int1  Temp_Bool1=0;
 int1  tmpGrOk=0;
-int1  fEvPare=0;
 
 int   rTimeOutGr=kTimeOut;
 int   rTimeOutLi=kTimeOut;
@@ -215,6 +219,12 @@ int1  fRunDelayArrGr=0;
 int1  fPausa=0;
 int1  fFallaGR=0;    //Falla al arranque del grupo electrogeno
 int1  DyArrGROff=0;  //no hace la demora a conexion del grupo si falla la red con el grupo en marcha
+
+int1  fArrRemoto=0;  //flag arranque remoto (copia filtrada del pin)
+int1  fFPArrRemoto=0;//auxiliar para deteccion de flanco de arranque remoto
+int1  fAuxArrMan=0;  //el que termina arrancado el grupo
+int1 fOmRem=0;
+
 int8  ModoGr=0;      //Modo arranque grupo electrogeno 0:Rele continuo, 1: Pulso arranca, pulso para, 2:Manejo directo del burro
 int8  intentosArr=6; //Intentos de arranque grupo en modo 2
 int8  preIntArr=6;
@@ -225,13 +235,15 @@ int8  preTPausa=15;   //Preset tiempo entre intentos
 int8  tFallaGR=30;    //tiempo falla arranque en modo señal continua
 int8  tPreFallaGr=1; //preset del anterior
 int8  tFaGrMar=1;     //falla grupo sigue en marcha
-int8  rTEvPare=kTEvPare;   //tiempo de activacion ev de pare
+int8  tArrRemoto=kDyArrRemoto;
+
 
 //Deteccion de fallas de comando
 int8  rFaCoLi=kFaCoLi;
 int8  rFaApLi=kFaCoLi;
 int8  rFaCoGr=kFaCoGr;
 int8  rFaApGr=kFaCoGr;
+
 int1  fOCLi=0;             //copia de salida cerrar linea
 int1  fOALi=0;             //copia de salida abrir linea
 int1  fOCGr=0;             //idem cerrar grupo
@@ -497,9 +509,9 @@ void RecuperaEEPROM(){
       
       //rTPreCeb=read_EEPROM(kCebador);    //Tiempo Cebado
       //rTPreCeb=2;
-      if (!Input(pCeb))fCeb=1;            //seteo o reset flag segun tiempo
-      else fCeb=0;
-      //fCeb=1;
+      //if (rTPreCeb==0)fCeb=0;            //seteo o reset flag segun tiempo
+      //else fCeb=1;
+      fCeb=1;
 }
 
 void GuardarEEPROM(){
@@ -650,6 +662,9 @@ if (!fCO_GR){             //si no esta confirmado
    else
       rCO_GR=10;
 }
+
+
+
 }//Fin timer 0 ISR
 
 #INT_RB
@@ -657,38 +672,20 @@ void RB6_isr(void){
 int RX =0;
    disable_interrupts(INT_RB6); 
    rx=GETC();
-   //rx_char=RX;
-   //fCommand=1;
-   ModBusRX (RX);
-   setup_timer_2(T2_DIV_BY_16,0xF0,10);
+   rx_char=RX;
+   fCommand=1;
 }
 
-#int_TIMER2
-void TMR2_isr(){
-int16 CRC=0;
-int16 CRC_Leido=0;
-   IF(fParami){                        //Calculo checksum de dato recibido
-         CRC=CRC_Calc(rxbuff,rxpuntero-3); //
-         CRC_Leido= make16(rxBuff[rxpuntero-2],rxBuff[rxpuntero-1]);
-         if(CRC_Leido==CRC)flagcommand=1;
-            setup_timer_2(T2_DISABLED,0,1);
-            rxpuntero=0;
-         }
-   else{
-         inicbuffRX();
-         rxpuntero=0;
-         }
-}
 
 
 // FUNCION PRINCIPAL BUCLE ////////////////////////////////////////////////////
 
 void main(){
+//setup_oscillator(OSC_8MHZ);
 CausaReinicio=RESTART_CAUSE();
 //Configura timer 0
 
 setup_timer_0(RTCC_8_BIT |RTCC_INTERNAL|RTCC_DIV_128);//
-setup_timer_2(T2_DIV_BY_4,0xF0,10);        //control de inactividad del bus
 
 OUTPUT_A(0);
 OUTPUT_B(0);
@@ -697,7 +694,7 @@ OUTPUT_C(0);
 //Configuracion de puertos   
 set_tris_a(0b00111111);
 set_tris_b(0b01111111);
-set_tris_c(0b01100000);
+set_tris_c(0b01110000);
 
 
 //Configuracion Analogicas
@@ -706,7 +703,6 @@ setup_comparator(NC_NC_NC_NC);            //no comparadores
 
 ////seteo interrupciones
    enable_interrupts(int_rtcc);                  // Habilita Interrupción TMR0
-   enable_interrupts(int_TIMER2);                  // Habilita Interrupción TIMER2 
    enable_interrupts(INT_RB6);                  // Habilita Interrupción rb6
    enable_interrupts(global);                    // Habilita interrupciones
 
@@ -727,7 +723,6 @@ fEsc=0;
 ParNro=0;
 rx_index=0;
 
-ModbusAddress=1; 
 
 tmr1seg=k1Seg;
 rTimeOutGr=kTimeOut;
@@ -744,6 +739,7 @@ tFaGrMar=kFaParGr;
 
 SET_ADC_CHANNEL(pVRL);  //seteo ad para leer tension R linea
 Estado=kRun;
+
 ////////////////////////////////////////////////////////
 //Bucle principal
 ////////////////////////////////////////////////////////
@@ -798,6 +794,27 @@ if(p_250ms){
       LeeParTiempos();
     }
     StatusLed(Estado);
+//verificacion de entrada de arranque remoto
+   if (!fArrRemoto){
+      if (input(pArrRem)){
+         if(rDyArrRem--==0){
+            rDyArrRem=kDyArrRem;
+            fArrRemoto=1;
+         }
+      }
+      else
+            rDyArrRem=kDyArrRem;
+   }
+   if (fArrRemoto){
+      if (!input(pArrRem)){
+         if(rDyArrRem--==0){
+            rDyArrRem=kDyArrRem;
+            fArrRemoto=0;
+         }
+      }
+      else
+            rDyArrRem=kDyArrRem;
+   }
 }//fin rutina cada 250ms
 
 if (p_250ms)p_250ms=0;
@@ -807,18 +824,15 @@ if (p_250ms)p_250ms=0;
 //Control de limites de tension linea
 //--------------------------------------------------------------------------------------------
 Verifica_VLi();
-
    
 //--------------------------------------------------------------------------------------------
 //Control de limites de tension Grupo
 //--------------------------------------------------------------------------------------------
 Verifica_VGr();
 
-
-
 //############################################################################################
 //                                OPERACION DE CONTACTORES
-//############################################################################################ 011 5554-8197  FED LACROCE 3194 011-1558444166
+//############################################################################################
 
 //--------------------------------------------------------------------------------------------
 //Apertura interruptor linea
@@ -836,7 +850,7 @@ if(fLineaOK  & !input(pCo_GR) & !fOCLi){    //Si esta ok la linea y no esta meti
          fOCLi=1;
         // OArrGR=0;                          //conteo para apagar el grupo
 }     
-IF (fLineaOK & input(pCO_LI))
+IF (fLineaOK & input(pCO_LI) & !fArrRemoto)
          OArrGR=0; 
 //-------------------------------------------------------------------------------------------- 
 
@@ -967,13 +981,36 @@ else
 //--------------------------------------------------------------------------------------------
 //Orden de marcha del grupo electrogeno
 //--------------------------------------------------------------------------------------------
-if (((!fLineaOK  & !fFallaGR) | fCO_GR) & !OArrGR) fRunDelayArrGr=1;
-else  fRunDelayArrGr=0;
+if (((!fLineaOK  & !fFallaGR) | fCO_GR ) & !OArrGR)
+    fRunDelayArrGr=1; //| fArrRemoto
+else
+    fRunDelayArrGr=0;
 
-if(fRunDelayArrGr){                                   //Si hay que arrancar el grupo
+//--------------------------------------------------------------------------------------------
+/*deteccion de flanco positivo de la orden de arranque externo
+*
+* objetivo: poder deshabilitar el bit de arranque remoto
+* si en medio de la prueba hay un corte de luz.
+*/
+//deteccion flanco ascendente
+if (fArrRemoto & !fFPArrRemoto)
+{
+   fAuxArrMan=1;
+}
+
+//deteccion flanco descendente
+if (!fArrRemoto & fFPArrRemoto)
+{
+   fAuxArrMan=0;
+}
+//igualo flags
+fFPArrRemoto = fArrRemoto;
+
+
+if(fRunDelayArrGr | fAuxArrMan){                      //Si hay que arrancar el grupo
 //Delay al arranque del grupo electrogeno
    if(p_1seg){
-      if(--tmrDyArrGr==0){                            //si paso el tiempo de demora al arranque del grupo
+      if(--tmrDyArrGr==0 | fOmRem){               //si paso el tiempo de demora al arranque del grupo
             OArrGR=1;                                 //Inicio secuencia arranque grupo
             //Carga tiempos de arranque grupo
             TArr=preTArr;                             //Tiempo de arrnaque grupo
@@ -984,6 +1021,7 @@ if(fRunDelayArrGr){                                   //Si hay que arrancar el g
             tmrCalBuj=preCalBuj;
             rTCeb=rTPreCeb;
             pasoArr=1;
+            fOmRem=0;
             }
    }
 }
@@ -1010,7 +1048,7 @@ if (OArrGR){
                   case 3://le da al burro el tiempo configurado
                         if (!fGrupoOk & !fFallaGR){
                               output_high(pReleArrGr);
-                              if (fCeb) output_high(pCebador);    //si esta configurado el cebador, lo activa
+                              output_high(pCebador);    //si esta configurado el cebador, lo activa
                         }
                         pasoArr=4;
                         break;
@@ -1033,7 +1071,7 @@ if (OArrGR){
                                     output_low(pCebador); 
                                     rTCeb=rTPreCeb;
                                  }
-                              }
+                                 }
                         }
                         break;
                   case 5://grupo en marcha
@@ -1092,37 +1130,16 @@ if (OArrGR){
 if (!OArrGR){
    if(p_1seg){
       if( --tmr1min==0){
-         tmr1min=60;
-         //fin de tiempo de parada de grupo
-         if(--tmrPareGr==0){
-            if(fCeb){//si esta con cebador
-               DyArrGROff=0;            //VUELVE A ACTIVAR DEMORA A LA CONEXION DEL GRUPO
-               output_low(pCebador);    //Saco cebador 
-               Output_low(pReleArrGr);  //Abro contacto grupo
-               output_low(pReleParGr);  
-           }
-           else//si no esta con cebador
-           {
-              output_high(pCebador);    //Activo EV
-              fEvPare=1;
-           }
-         }
+            tmr1min=60;
+            if(--tmrPareGr==0){ 
+                  DyArrGROff=0;            //VUELVE A ACTIVAR DEMORA A LA CONEXION DEL GRUPO
+                  output_low(pCebador);    //Saco cebador 
+                  Output_low(pReleArrGr);  //Abro contacto grupo
+                  output_low(pReleParGr);  
+                  }
+            }
       }
-      if (fEvPare)
-      {
-       if (--rTEvPare==0){
-         DyArrGROff=0;            //VUELVE A ACTIVAR DEMORA A LA CONEXION DEL GRUPO
-         fEvPare=0;
-         rTEvPare=kTEvPare; 
-         output_low(pCebador);
-         output_low(pReleParGr);
-         }
-      }
-      else
-         rTEvPare=kTEvPare;
-     }
-
-}
+   }
 else{
    tmrPareGr=prePareGr;
    tmr1min=60;
@@ -1189,16 +1206,7 @@ else{
 }
 if (p_1seg)p_1seg=0;
 
-if(flagcommand){         // Si hay comando pendiente lo procesa
-         ModBus_exe();        
-         flagcommand=0;
-         inicbuffRX();
-         rxpuntero=0; 
-   }
-if (fTX && TRMT){
-   ModBusTX ();
-}
-
+if (fCommand) RX();
 IF (fScan) CMD_EXE();
 
 } //Fin buble infinito
