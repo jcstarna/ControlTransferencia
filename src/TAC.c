@@ -172,8 +172,8 @@ int1  fFalla=0;          //Alguna falla en transferencia pendiented de aceptar
 int1  fRxOk=0;
 
 //Flags fallas
-int1  fTempFallaGr=0;
-int1  fTempFallaLi=0;
+int1  fTempFallaGr=0; //flag indica que grupo esta ok falla = 0 ok = 1
+int1  fTempFallaLi=0; //flag indica que falla esta ok
 
 //Flag cada un segundo
 int1  pul_1seg=0;
@@ -473,36 +473,38 @@ for(j=0;j<4;j++){//3 datos + chksum
    }
 }
 
+
+
 void Verifica_VLi(void){
       if (VRLi > VRmax)
          bit_set(rFaLi,0);
-      else
-         bit_clear(rFaLi,0);
+      if (bit_test(rFaLi,0));
+         if (VRLi < (VRmax-5)) bit_clear(rFaLi,0);
          
       if (VSLi > VRmax)
          bit_set(rFaLi,1);
-      else
-         bit_clear(rFaLi,1);
+      if (bit_test(rFaLi,1));
+         if (VsLi < (VRmax-10))bit_clear(rFaLi,1);
          
       if (VTLi > VRmax)
          bit_set(rFaLi,2);
-      else
-         bit_clear(rFaLi,2);
+      if (bit_test(rFaLi,2));     
+         if (VtLi < (VRmax-10))bit_clear(rFaLi,2);
       
-      if (VRLi < VRmin)
+      if (VRLi < (VRmin))
          bit_set(rFaLi,3);
-      else
-         bit_clear(rFaLi,3);
+      if (bit_test(rFaLi,3));
+         if (VRLi >(VRmin+10))bit_clear(rFaLi,3);
          
-      if (VSLi < VRmin)
+      if (VSLi < (VRmin))
          bit_set(rFaLi,4);
-      else
-         bit_clear(rFaLi,4);
+      if (bit_test(rFaLi,4));
+         if (VsLi >(VRmin+10))bit_clear(rFaLi,4);
          
-      if (VTLi < VRmin)
+      if (VTLi < (VRmin))
          bit_set(rFaLi,5);
-      else
-         bit_clear(rFaLi,5);
+      if (bit_test(rFaLi,5))
+         if (VtLi >(VRmin+10))bit_clear(rFaLi,5);
       
       if (!input(pFallaLi))
          bit_set(rFaLi,6);
@@ -521,6 +523,12 @@ void Verifica_VGr(void){
       else
          bit_clear(rFaGr,0);
          
+      if (VRGr < VRmin)
+         bit_set(rFaGr,3);
+      else
+         bit_clear(rFaGr,3);
+      
+      
       if (VSGr > VRmax)
          bit_set(rFaGr,1);
       else
@@ -531,10 +539,7 @@ void Verifica_VGr(void){
       else
          bit_clear(rFaGr,2);
       
-      if (VRGr < VRmin)
-         bit_set(rFaGr,3);
-      else
-         bit_clear(rFaGr,3);
+
          
       if (VSGr < VRmin)
          bit_set(rFaGr,4);
@@ -913,7 +918,7 @@ lcd_putc('\f'); //limpiar display
 lcd_gotoxy(4,1);
 printf(lcd_putc,"ControlARG");
 lcd_gotoxy(1,2);
-printf(lcd_putc,"TA 380   Fw:5.25");
+printf(lcd_putc,"TA 380  Fw:5.25A");
 RecuperaEEPROM();    //Leo parametros almacenados en la EEPROM
 fLeerHS=1;
 delay_ms(3500);
@@ -943,8 +948,9 @@ if(fInterrup & input(pCO_LI)){//si esta en modo interruptor y esta cerrado el in
          } 
    }
 }
-Verifica_VLi();
 
+   Verifica_VLi();
+   
 if(fInterrup & input(pCO_GR)){//si esta en modo interruptor y esta cerrado el interruptor de Grupo
 //leo micro de linea para ver como estan las tensiones para no abrir el interruptor
    if (input(pFallaGr)){  //si esta vivo el micro de grupo
@@ -1015,7 +1021,7 @@ if (p_250ms)p_250ms=0;
 //--------------------------------------------------------------------------------------------
 //Control de limites de tension linea
 //--------------------------------------------------------------------------------------------
-Verifica_VLi();
+   Verifica_VLi();
 
    
 //--------------------------------------------------------------------------------------------
@@ -1374,7 +1380,6 @@ if (!OArrGR & fSecArr){ //& (rModoTransf==1) eliminado para permitir operacion c
             rTEvPare=kTEvPare; 
             output_low(pAlarm);
             output_low(pReleParGr);
-            output_low(pReleArrGr);
             fSecArr=0; 
             fPareManual=0;
          }
