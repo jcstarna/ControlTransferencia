@@ -11,5 +11,5 @@ Type=4
 1=dist\default\production\Transferencia.X.production.c
 [Units]
 Count=1
-1=..\src\TAC_FP
+1=..\src\TAC
 Link=1

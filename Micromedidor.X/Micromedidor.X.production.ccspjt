@@ -1,0 +1,15 @@
+[PROJECT]
+Target=dist\default\production\Micromedidor.X.production.hex
+Processor_Text=PIC12F675
+CCSVersion=5.093
+Compiler=PCM
+[Target Data]
+FileList=$linker.c
+[dist\default\production\Micromedidor.X.production.c]
+Type=4
+[mru-list]
+1=dist\default\production\Micromedidor.X.production.c
+[Units]
+Count=1
+1=..\src\micromedidor\Med
+Link=1

@@ -21,7 +21,7 @@ void TecMenu(){
    }
 
 //PRESIONO LA TECLA MENU
-   if(rMenu>0 & (rMenu!=20) ){
+   if(rMenu>0 & (rMenu!=40) ){
       if(fMenu){
             fMenu=0;
             fActDisp=1;
@@ -47,19 +47,23 @@ void TecMenu(){
                            break;
                   case 9:  rTempVar=ModoGR;
                            break;
-                  case 10:  rTempVar=preCalBuj;
+                  case 10: rTempVar=preCalBuj;
                            break;                           
-                  case 11:  rTempVar=preTArr;
+                  case 11: rTempVar=preTArr;
                            break;
-                  case 12:  rTempVar=preTPausa;
+                  case 12: rTempVar=preTPausa;
                            break;   
-                  case 13:  rTempVar=preIntArr;
+                  case 13: rTempVar=preIntArr;
                            break;  
-                  case 14:  rTempVar=fSimuTransf;
+                  case 14: rTempVar=fArrManual;////////////////////////////
                            break;   
                   case 15: rTempVar=tPreFallaGr;
                            break;
                   case 16: rTempVar=rTPreCeb;
+                           break;
+                  case 17: rTempVar=rTipoPare;
+                           break;                          
+                  case 38: rMenu=39;       
                   default: break;
             }
       }
@@ -107,10 +111,10 @@ void TecMenu(){
                            if (rtempvar >2)rtempvar=2;
                            break;
                            //tiempo calentamiento bujia
-                  case 10:  if (rtempvar<1)rTempVar=1;
+                  case 10: if (rtempvar<1)rTempVar=1;
                            break;                           
                            //tiempo accionamiento motor arranque
-                  case 11:  if (rtempvar<1)rTempVar=1;
+                  case 11: if (rtempvar<1)rTempVar=1;
                            break;
                            //pausa entre arranque y arranque
                   case 12: if(rtempvar<15)rTempVar=15;
@@ -119,6 +123,7 @@ void TecMenu(){
                   case 13: if(rtempvar<1)rTempVar=1;
                            break;
                            //Simulacion de transferencia
+                           //arranque manual del grupo
                   case 14: if (rtempvar>1)rTempVar=0;
                            break;
                            //Tiempo de falla con grupo en modo pulso continuo
@@ -129,19 +134,33 @@ void TecMenu(){
                            break;
                            //Operacion manual de la transferencia (teclas arriba o abajo)
                   case 17:
-                  
+                           if(p_1seg0H){
+                              if(--f0hora==0){
+                                 f0hora=k0hora;
+                                 rHsMarcha=0;   //Horas de marcha
+                                 rMinMarcha=0;
+                                 rSegMarcha=0; 
+                                 fGuardaHS=1;
+                              }
+                           }
                            break;
-                  case 18: if (fArriba) rGanLi++;
+                  case 18://ajuste tipo de parada de grupo
+                           if(rTempVar==2)rTempVar=1;
+                           if(rTempVar>2)rTempVar=0;
+                           break;
+                  case 38: if (fArriba) rGanLi++;
                            if (fAbajo)  rGanLi--;
                            break;                  
-                  case 19: if (fArriba) rGanGr++;
+                  case 39: if (fArriba) rGanGr++;
                            if (fAbajo)  rGanGr--;
                            break;
                   default: break;
-            }                  
+            }   
       fArriba=0;
       fAbajo=0;
-      fActDisp=1;
+      p_1seg0H=0;
+      //fActDisp=1;
+      fActVal=1;
       break;
       }
       //Tecla OK
@@ -178,6 +197,7 @@ void TecMenu(){
                            rTempVar=ModoGR;
                            break;
                   case 9:  ModoGR=rTempVar;
+                           if (modoGr==1)rTipoPare=0;
                            rTempVar=preCalBuj;
                            break;
                   case 10:  preCalBuj=rTempVar;
@@ -194,10 +214,11 @@ void TecMenu(){
                            break;
                   case 13: preIntArr=rTempVar;
                            intentosArr=preIntArr;
-                           rTempVar=fSimuTransf;
+                           rTempVar=fArrManual;
                            break;
-                  case 14: fSimuTransf=rTempVar;
-                           rtempvar=tPreFallaGr;
+                  case 14: fArrManual=rTempVar;
+                           //rtempvar=tPreFallaGr;
+                           rMenu=13;//queda en el mismo menu
                            break; 
                            //Tiempo de falla con grupo en modo pulso continuo
                   case 15: tPreFallaGr=rTempVar;
@@ -209,17 +230,20 @@ void TecMenu(){
                            if (rTPreCeb != 0) fCeb=1;
                            else fCeb=0;
                            break;
-                           //menu calibracion de red al presionar ok asigno 18 mas + al final
-                           //da 19 que es el seg menu de calibracion
-                  case 18: rMenu=18;
+                  case 17: rTempVar=rTipoPare;
                            break;
-                  case 19: rMenu=16;
+                  case 18: if(!fCeb)rTipoPare=rTempVar;
+                           ELSE rTipoPare=0;
+                           //rMenu=37;//menu 18 es tipo de pare, cuando apreta ok, asigno
+                           break;   //valor 37, que sumado al final da 38, que es el iniicio de calibracion
+                  case 38: rMenu=38;
+                           break;
+                  case 39: rMenu=18;
                            break;
                   default: break;
             }
             if(++rMenu==rMaxMenu){
                rMenu=0;
-               //guardarEEPROM();
                fGuardarEEPROM=1;
             }
       }//fin tecla OK
@@ -229,7 +253,7 @@ void TecMenu(){
 
 
 //////  PANTALLA DE ALARMAS  ///////
-         if(rMenu==20){
+         if(rMenu==40){
             if(fOk){
                fOk=0;
                fFalla=0;
